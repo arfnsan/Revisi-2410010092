@@ -1,8 +1,12 @@
+//Nama : Muhammad Arifin Ikhsan | NPM : 2410010092
+
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package id.ac.uniska.pbo2.uts;
+
+import com.formdev.flatlaf.FlatLightLaf;
 
 /**
  *
@@ -10,13 +14,34 @@ package id.ac.uniska.pbo2.uts;
  */
 public class DaftarBelanjaForm extends javax.swing.JFrame {
     
-    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(DaftarBelanjaForm.class.getName());
-
+    private BelanjaTableModel tableModel = new BelanjaTableModel();
     /**
      * Creates new form DaftarBelanjaForm
      */
     public DaftarBelanjaForm() {
         initComponents();
+        
+        isiContoh();
+        
+        barangTable.setModel(tableModel);
+        barangTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        
+        barangTable.getColumnModel().getColumn(0).setPreferredWidth(180);
+        barangTable.getColumnModel().getColumn(1).setPreferredWidth(120);
+        barangTable.getColumnModel().getColumn(2).setPreferredWidth(100);
+        barangTable.getColumnModel().getColumn(3).setPreferredWidth(60);
+        barangTable.getColumnModel().getColumn(4).setPreferredWidth(120);
+        
+        kategoriCombo.removeAllItems();
+        for (Kategori kategori : Kategori.values()) {
+            kategoriCombo.addItem(kategori.toString());
+        }
+        
+        getRootPane().setDefaultButton(tambahButton);
+        
+        pack();
+        setMinimumSize(getSize());
+        setLocationRelativeTo(null);
     }
 
     /**
@@ -145,9 +170,11 @@ public class DaftarBelanjaForm extends javax.swing.JFrame {
         tombolPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
 
         tambahButton.setText("Tambah");
+        tambahButton.addActionListener(this::tambahButtonActionPerformed);
         tombolPanel.add(tambahButton);
 
         bersihkanButton.setText("Bersihkan");
+        bersihkanButton.addActionListener(this::bersihkanButtonActionPerformed);
         tombolPanel.add(bersihkanButton);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -191,7 +218,7 @@ public class DaftarBelanjaForm extends javax.swing.JFrame {
 
         tablePanel.add(jScrollPane1, java.awt.BorderLayout.CENTER);
 
-        statusLabel.setText(" ");
+        statusLabel.setText("Total Rp0 | Diskon Rp0 | Bayar Rp0");
         tablePanel.add(statusLabel, java.awt.BorderLayout.SOUTH);
 
         getContentPane().add(tablePanel, java.awt.BorderLayout.CENTER);
@@ -199,31 +226,113 @@ public class DaftarBelanjaForm extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    private void tambahButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tambahButtonActionPerformed
+        tambah();
+    }//GEN-LAST:event_tambahButtonActionPerformed
+
+    private void bersihkanButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bersihkanButtonActionPerformed
+        bersihkanForm();
+    }//GEN-LAST:event_bersihkanButtonActionPerformed
+
     /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
-            logger.log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
+        FlatLightLaf.setup();
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(() -> new DaftarBelanjaForm().setVisible(true));
     }
+    
+    private void isiContoh() {
+        tableModel.tambahBarang(new Barang("Pulpen", Kategori.ALAT_TULIS, 3500, 4));
+        tableModel.tambahBarang(new Barang("Buku Tulis", Kategori.ALAT_TULIS, 6000, 10));
+        tableModel.tambahBarang(new Barang("Tas Bekal", Kategori.LAINNYA, 26000, 1));
+        tableModel.tambahBarang(new Barang("Spidol", Kategori.ALAT_TULIS, 12500, 2));
 
+        perbaruiStatus();
+    }
+    
+    private void perbaruiStatus() {
+        long total = tableModel.getTotal();
+        long diskon = tableModel.getDiskon();
+        long bayar = tableModel.getBayar();
+
+        statusLabel.setText(
+            "Total " + tableModel.formatRupiah(total)
+            + " | Diskon " + tableModel.formatRupiah(diskon)
+            + " | Bayar " + tableModel.formatRupiah(bayar)
+        );
+    }
+    
+    private Kategori ambilKategoriTerpilih() {
+        String kat = kategoriCombo.getSelectedItem().toString();
+
+        return switch (kat) {
+            case "Alat Tulis" -> Kategori.ALAT_TULIS;
+            case "Makanan" -> Kategori.MAKANAN;
+            case "Minuman" -> Kategori.MINUMAN;
+            default -> Kategori.LAINNYA;
+        };
+    }
+    
+    private void tambah() {
+        String nama = namaBarangField.getText().trim();
+        String hargaStr = hargaField.getText().trim();
+
+        if (nama.isEmpty()) {
+            errorLabel.setText("Nama barang wajib diisi");
+            namaBarangField.requestFocus();
+            return;
+        }
+
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            String namaLama = tableModel.getValueAt(i, 0).toString();
+
+            if (nama.equalsIgnoreCase(namaLama)) {
+                errorLabel.setText("Barang " + nama + " sudah ada di daftar");
+                namaBarangField.requestFocus();
+                return;
+            }
+        }
+
+        int harga;
+        try {
+            harga = Integer.parseInt(hargaStr);
+
+            if (harga < 1 || harga > 10000000) {
+                errorLabel.setText("Harga harus angka 1 sampai 10000000");
+                hargaField.requestFocus();
+                return;
+            }
+        } catch (NumberFormatException e) {
+            errorLabel.setText("Harga harus angka 1 sampai 10000000");
+            hargaField.requestFocus();
+            return;
+        }
+
+        Kategori kategori = ambilKategoriTerpilih();
+        int jumlah = (Integer) jumlahSpinner.getValue();
+
+        Barang barangBaru = new Barang(nama, kategori, harga, jumlah);
+
+        tableModel.tambahBarang(barangBaru);
+
+        perbaruiStatus();
+        bersihkanForm();
+    }
+    
+    private void bersihkanForm() {
+        namaBarangField.setText("");
+        hargaField.setText("");
+        kategoriCombo.setSelectedIndex(0);
+        jumlahSpinner.setValue(1);
+        errorLabel.setText("");
+        namaBarangField.requestFocus();
+    }
+    
+    
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTable barangTable;
     private javax.swing.JButton bersihkanButton;
