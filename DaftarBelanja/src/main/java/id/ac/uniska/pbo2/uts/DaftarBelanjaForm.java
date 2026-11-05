@@ -21,6 +21,10 @@ public class DaftarBelanjaForm extends javax.swing.JFrame {
     public DaftarBelanjaForm() {
         initComponents();
         
+        judulLabel.putClientProperty("FlatLaf.styleClass", "h2");
+        keteranganLabel.putClientProperty("FlatLaf.style", "foreground: $Label.disabledForeground");
+        hargaField.putClientProperty("JTextField.placeholderText", "Tanpa titik, contoh 15000");
+        
         isiContoh();
         
         barangTable.setModel(tableModel);
